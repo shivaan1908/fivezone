@@ -1,0 +1,5 @@
+const Planner = (() => {
+  function pad(n){return String(n).padStart(2,"0");}
+  function start(){const form=document.getElementById("planner-form"),city=document.getElementById("ref-city"),time=document.getElementById("ref-time"),out=document.getElementById("planner-results");if(!form)return;FRIENDS.forEach(f=>{const o=document.createElement("option");o.value=f.name;o.textContent=`${f.name} — ${f.city}`;city.appendChild(o);});const now=new Date();time.value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;form.addEventListener("submit",e=>{e.preventDefault();const f=FRIENDS.find(x=>x.name===city.value),dt=luxon.DateTime.fromISO(time.value,{zone:f.tz});out.innerHTML=FRIENDS.map(x=>{const d=dt.setZone(x.tz),h=d.hour,label=h>=7&&h<18?"Daytime":h>=18&&h<22?"Edge hours":"Asleep, probably";return`<div class="result-row"><div><strong>${x.name}</strong><div class="rzone">${x.city}</div></div><div class="rtime">${d.toFormat("ccc d MMM · HH:mm")}</div><span class="pill ${label==='Daytime'?'daytime':label==='Edge hours'?'evening':'night'}">${label}</span></div>`;}).join("");});}
+  return{start};
+})();
