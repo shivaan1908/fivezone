@@ -1,0 +1,8 @@
+const Clocks = (() => {
+  const prevValues = {};
+  function partOfDay(hour) { if(hour>=5&&hour<11)return"MORNING"; if(hour>=11&&hour<17)return"AFTERNOON"; if(hour>=17&&hour<21)return"EVENING"; return"LATE NIGHT"; }
+  function getParts(tz) { const fmt=new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false,weekday:"short",day:"2-digit",month:"short"}); const p={};fmt.formatToParts(new Date()).forEach(x=>p[x.type]=x.value);return p; }
+  function buildFlaps(rowKey,digits){return digits.split("").map((d,i)=>{if(d===":")return`<div class="flap sep">:</div>`;const key=`${rowKey}-${i}`,changed=prevValues[key]!==undefined&&prevValues[key]!==d;prevValues[key]=d;return`<div class="flap${changed?" flip":""}" data-key="${key}">${d}</div>`;}).join("");}
+  function render(){const board=document.getElementById("board");if(!board)return;let html="";FRIENDS.forEach((f,i)=>{const p=getParts(f.tz),digits=`${p.hour}:${p.minute}:${p.second}`;html+=`<div class="board-row"><div class="idx">${String(i+1).padStart(2,"0")}</div><div class="who"><div class="name">${f.name}</div><div class="city">${f.city}</div></div><div><div class="flap-clock">${buildFlaps(`row${i}`,digits)}</div><div class="day-part">${p.weekday} ${p.day} ${p.month} · ${partOfDay(parseInt(p.hour,10))}</div></div><div></div><div class="badge away" id="status-${f.name.replace(/\s+/g,"_")}">—</div></div>`;});board.innerHTML=html;}
+  function start(){render();setInterval(render,1000);} return{start};
+})();
