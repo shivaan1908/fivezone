@@ -13,14 +13,13 @@ service cloud.firestore {
              request.auth.token.email == 'jashn@fivezone.app' ? 'Jashn' : null;
     }
 
-    function allowedUser() {
-      return signedIn() && userName() != null;
-    }
+    function allowedUser() { return signedIn() && userName() != null; }
 
     match /messages/{messageId} {
       allow read: if allowedUser();
       allow create: if allowedUser()
         && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
         && request.resource.data.name == userName()
         && request.resource.data.text is string
         && request.resource.data.ts is number
@@ -33,6 +32,7 @@ service cloud.firestore {
       allow create, update: if allowedUser()
         && friendName == userName()
         && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
         && request.resource.data.status in ['Available', 'Busy', 'Sleeping', 'Away']
         && request.resource.data.ts is number;
       allow delete: if false;
@@ -40,7 +40,10 @@ service cloud.firestore {
 
     match /meta/next_call {
       allow read: if allowedUser();
-      allow create, update: if allowedUser() && request.resource.data.uid == request.auth.uid;
+      allow create, update: if allowedUser()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.when is string;
       allow delete: if false;
     }
   }
