@@ -26,7 +26,7 @@ const Backend = (() => {
   async function init() {
     mode = "local";
     db = null;
-    if (typeof firebase === "undefined" || !firebaseConfig?.apiKey || firebaseConfig.apiKey.startsWith("PASTE_")) return mode;
+    if (typeof firebase === "undefined" || typeof firebaseConfig === "undefined" || !firebaseConfig?.apiKey || firebaseConfig.apiKey.startsWith("PASTE_")) return mode;
     try {
       if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
       const user = await waitForAuth();
@@ -44,12 +44,12 @@ const Backend = (() => {
   function currentUser() { return firebase?.auth?.().currentUser || null; }
   function currentFriend() {
     const user = currentUser();
-    return FRIENDS.find(f => f.email === user?.email) || null;
+    return FRIENDS.find(f => f.email.toLowerCase() === (user?.email || "").toLowerCase()) || null;
   }
 
   function sendMessage(name, text) {
     const user = currentUser(), friend = currentFriend();
-    if (mode !== "cloud" || !user || !friend || friend.name !== name) throw new Error("Not connected or invalid FiveZone user.");
+    if (mode !== "cloud" || !user || !friend || friend.name !== name) return Promise.reject(new Error("Not connected or invalid FiveZone user."));
     const clean = String(text || "").trim().slice(0, 2000);
     if (!clean) return Promise.resolve();
     return db.collection("messages").add({ uid: user.uid, email: user.email, name: friend.name, text: clean, ts: Date.now() });
@@ -66,7 +66,9 @@ const Backend = (() => {
   function setStatus(name, status) {
     const user = currentUser(), friend = currentFriend();
     if (mode !== "cloud" || !user || !friend || friend.name !== name) return Promise.reject(new Error("Invalid FiveZone user."));
-    return db.collection("statuses").doc(friend.name).set({ uid: user.uid, email: user.email, status, ts: Date.now() });
+    const allowed = ["Available", "Busy", "Sleeping", "Away"];
+    if (!allowed.includes(status)) return Promise.reject(new Error("Invalid status."));
+    return db.collection("statuses").doc(friend.name).set({ uid: user.uid, email: user.email, status, ts: Date.now() }, { merge: true });
   }
 
   function onStatuses(callback, onError) {
@@ -91,5 +93,5 @@ const Backend = (() => {
     callback(null); return () => {};
   }
 
-  return { init, mode: () => mode, sendMessage, onMessages, setStatus, onStatuses, setNextCall, onNextCall };
+  return { init, mode: () => mode, currentUser, currentFriend, sendMessage, onMessages, setStatus, onStatuses, setNextCall, onNextCall };
 })();
