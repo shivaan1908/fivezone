@@ -1,1 +1,140 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>FIVEZONE — Board</title><link rel="stylesheet" href="css/style.css"></head><body><div class="board-shell"><div class="masthead"><div><div class="eyebrow">Live · updates every second</div><h1>FIVE<span>ZONE</span></h1></div><div class="who">Signed in as <strong id="who-am-i">—</strong><br><label>My status</label><select id="my-status"><option>Available</option><option>Busy</option><option>Sleeping</option><option>Away</option></select><button class="ghost" id="logout-btn">Sign out</button></div></div><div id="board" class="board"></div><p class="setup-note" id="mode-note"></p><div class="globe-panel"><div class="globe-stage"><div id="globe-wrap"><canvas id="globe-canvas"></canvas></div></div><div class="globe-side"><h2>Where everyone is</h2><p class="hint">Drag to spin, or hover a name — the globe tracks who's where.</p><div id="globe-legend" class="globe-legend"></div></div></div><div class="panels"><div class="panel"><h2>Meeting planner</h2><p class="hint">Pick a time in anyone's timezone.</p><form id="planner-form"><label for="ref-city">In this city's time</label><select id="ref-city"></select><label for="ref-time">At</label><input type="datetime-local" id="ref-time"><button type="submit">Convert</button></form><div id="planner-results"></div></div><div class="panel"><h2>Group chat</h2><p class="hint">Quick messages for the crew.</p><div id="chat-log" class="chat-log"></div><form id="chat-form" class="chat-form"><textarea id="chat-input" placeholder="Say something…"></textarea><button type="submit">Send</button></form></div></div><div class="countdown-strip"><div id="nextcall-display">No call scheduled yet.</div><form id="nextcall-form"><input type="datetime-local" id="nextcall-input"><button type="submit">Set next call</button></form></div><p class="footer-note">FIVEZONE · built for 5 friends, 5 cities, 1 timezone-free brain</p></div><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"></script><script src="js/config.js"></script><script src="js/firebase-config.js"></script><script src="js/backend.js"></script><script src="js/auth.js"></script><script src="js/clocks.js"></script><script src="js/globe.js"></script><script src="js/planner.js"></script><script src="js/app.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FIVEZONE — Board</title>
+<meta name="theme-color" content="#12151B" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="stylesheet" href="css/style.css" />
+<script>
+  // Apply the saved theme before first paint to avoid a flash of the wrong palette.
+  document.documentElement.setAttribute("data-theme", localStorage.getItem("fz_theme") || "dark");
+</script>
+</head>
+<body>
+  <div class="board-shell">
+
+    <div class="masthead">
+      <div>
+        <div class="eyebrow">Live · updates every second</div>
+        <h1>FIVE<span>ZONE</span></h1>
+      </div>
+      <div class="who">
+        Signed in as <strong id="who-am-i">—</strong>
+        <br />
+        <label style="margin:8px 0 4px;">My status</label>
+        <select id="my-status" style="width:auto; display:inline-block; margin-right:8px;">
+          <option value="Available">Available</option>
+          <option value="Busy">Busy</option>
+          <option value="Sleeping">Sleeping</option>
+          <option value="Away">Away</option>
+        </select>
+        <div class="masthead-actions">
+          <button class="ghost" type="button" data-theme-btn>☾ Daylight mode</button>
+          <button class="ghost" id="unit-toggle" type="button" title="Toggle °C / °F">°C</button>
+          <button class="ghost" id="logout-btn" type="button">Sign out</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="board" class="board"></div>
+    <p class="setup-note" id="mode-note"></p>
+
+    <div class="globe-panel">
+      <div class="globe-stage">
+        <div id="globe-wrap">
+          <canvas id="globe-canvas"></canvas>
+        </div>
+      </div>
+      <div class="globe-side">
+        <h2>Where everyone is</h2>
+        <p class="hint">Drag to spin, or hover/tap a name — the globe tracks who's where. Shaded patches are wherever it's currently nighttime.</p>
+        <div id="globe-legend" class="globe-legend"></div>
+      </div>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <h2>Meeting planner</h2>
+        <p class="hint">Pick a time in anyone's timezone — see what it means for everyone else.</p>
+        <form id="planner-form">
+          <label for="ref-city">In this city's time</label>
+          <select id="ref-city"></select>
+          <label for="ref-time">At</label>
+          <input type="datetime-local" id="ref-time" />
+          <button type="submit" style="margin-top:16px;">Convert</button>
+        </form>
+        <div id="planner-results" style="margin-top:18px;"></div>
+
+        <div class="besttime-block">
+          <button type="button" class="ghost" id="besttime-btn">✨ Find the best time to call everyone</button>
+          <div id="besttime-results" class="besttime-results"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Group chat</h2>
+        <p class="hint">Quick messages for the crew. React with an emoji, or hit + for more.</p>
+        <div id="chat-log" class="chat-log"></div>
+        <form id="chat-form" class="chat-form">
+          <textarea id="chat-input" placeholder="Say something… (Enter to send, Shift+Enter for a new line)"></textarea>
+          <button type="submit">Send</button>
+        </form>
+        <div class="chat-settings">
+          <label class="switch-row"><input type="checkbox" id="notif-toggle" /> Browser notifications</label>
+          <label class="switch-row"><input type="checkbox" id="sound-toggle" /> Notification sound</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel events-panel">
+      <h2>Upcoming calls</h2>
+      <p class="hint">Anyone can add one — the soonest counts down for everyone.</p>
+      <div class="countdown-strip">
+        <div id="nextcall-display">No calls scheduled yet.</div>
+      </div>
+      <form id="event-form" class="event-form">
+        <div class="event-form-grid">
+          <div>
+            <label for="event-title">What</label>
+            <input type="text" id="event-title" placeholder="Weekly catch-up" maxlength="120" required />
+          </div>
+          <div>
+            <label for="event-when">When</label>
+            <input type="datetime-local" id="event-when" required />
+          </div>
+        </div>
+        <label for="event-note">Note (optional)</label>
+        <input type="text" id="event-note" placeholder="Agenda, link, whatever" maxlength="200" />
+        <button type="submit" style="margin-top:16px;">Add call</button>
+      </form>
+      <div id="events-list" class="events-list" style="margin-top:18px;"></div>
+    </div>
+
+    <p class="footer-note">FIVEZONE · built for 5 friends, 5 cities, 1 timezone-free brain</p>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"></script>
+
+  <script src="js/config.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/backend.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/clocks.js"></script>
+  <script src="js/globe.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/planner.js"></script>
+  <script src="js/bestTime.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
