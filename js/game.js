@@ -1,0 +1,16 @@
+const FiveZoneGame = (() => {
+  const questions=[
+    {q:"Which city is in the Eastern Time Zone?",a:["Mumbai","Pennsylvania","Tokyo","London"],c:1},
+    {q:"If it is 12:00 noon in Mumbai, which is closest in New York?",a:["2:30 AM","4:30 AM","8:30 AM","12:00 AM"],c:0},
+    {q:"Which status means you are free to chat?",a:["Sleeping","Available","Away","Busy"],c:1},
+    {q:"How many friends are in FiveZone?",a:["3","4","5","6"],c:2},
+    {q:"Which one is NOT a timezone?",a:["IST","ET","GMT","LOL"],c:3}
+  ];
+  let current=0,score=0,locked=false;
+  function start(){const root=document.getElementById("game-root");if(!root)return;render();Backend.onGameScores("blitz",scores=>renderLeaderboard(scores),e=>console.warn(e));}
+  function render(){const root=document.getElementById("game-root");root.innerHTML=`<div class="game-head"><div><div class="eyebrow">5 questions · fastest minds win</div><h2>⚡ FIVEZONE BLITZ</h2></div><div class="game-score">${score} pts</div></div><div class="game-progress">${current+1} / ${questions.length}</div><h3>${questions[current].q}</h3><div class="game-options">${questions[current].a.map((x,i)=>`<button class="game-option" data-i="${i}">${x}</button>`).join("")}</div><div id="game-feedback" class="game-feedback"></div><div class="leaderboard"><h3>🏆 Leaderboard</h3><div id="leaderboard-list">Loading…</div></div>`;root.querySelectorAll(".game-option").forEach(b=>b.addEventListener("click",()=>answer(Number(b.dataset.i))))}
+  function answer(i){if(locked)return;locked=true;const correct=i===questions[current].c;const fb=document.getElementById("game-feedback");if(correct){score+=100;fb.textContent="Correct! +100";fb.className="game-feedback good"}else{fb.textContent=`Not quite — answer: ${questions[current].a[questions[current].c]}`;fb.className="game-feedback bad"}setTimeout(()=>{current++;locked=false;if(current<questions.length)render();else finish()},700)}
+  async function finish(){const root=document.getElementById("game-root");try{await Backend.saveGameScore("blitz",score)}catch(e){console.warn("Could not save score",e)}root.innerHTML=`<div class="game-finished"><div class="eyebrow">Run complete</div><h2>⚡ ${score} points</h2><p>${score===500?"Perfect run. Someone stop this person.":score>=300?"Solid run. Run it again and take the top spot.":"Warm-up round. You can beat that."}</p><button id="play-again">Play again</button><div class="leaderboard"><h3>🏆 Leaderboard</h3><div id="leaderboard-list">Loading…</div></div></div>`;root.querySelector("#play-again").onclick=()=>{current=0;score=0;render();Backend.onGameScores("blitz",renderLeaderboard)}}
+  function renderLeaderboard(scores){const el=document.getElementById("leaderboard-list");if(!el)return;const map={};scores.forEach(s=>{if(!map[s.name]||s.score>map[s.name].score)map[s.name]=s});const rows=Object.values(map).sort((a,b)=>b.score-a.score).map((s,i)=>`<div class="leader-row"><b>${i+1}</b><span>${s.name}</span><strong>${s.score}</strong></div>`).join("");el.innerHTML=rows||"No scores yet — be the first."}
+  return{start};
+})();
