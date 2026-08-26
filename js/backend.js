@@ -12,7 +12,10 @@ const Backend = (() => {
   function onNextCall(cb,err){if(mode==="cloud")return db.collection("meta").doc("next_call").onSnapshot(d=>cb(d.exists?d.data().when:null),e=>{console.error("Next call listener failed",e);if(err)err(e)});cb(null);return()=>{}}
   function heartbeat(){const u=currentUser(),f=currentFriend();if(mode!=="cloud"||!u||!f)return Promise.resolve();return db.collection("presence").doc(f.name).set({uid:u.uid,email:u.email,name:f.name,lastSeen:Date.now()},{merge:true})}
   function onPresence(cb,err){if(mode==="cloud")return db.collection("presence").onSnapshot(s=>{const out={};s.forEach(d=>out[d.id]=d.data());cb(out)},e=>{if(err)err(e)});cb({});return()=>{}}
-  function saveGameScore(game,score){const u=currentUser(),f=currentFriend();if(mode!=="cloud"||!u||!f)return Promise.reject(new Error("Not connected."));return db.collection("game_scores").doc(`${game}_${f.name}`).set({game,name:f.name,uid:u.uid,score:Number(score)||0,ts:Date.now()},{merge:true})}
-  function onGameScores(game,cb,err){if(mode==="cloud")return db.collection("game_scores").where("game","==",game).onSnapshot(s=>cb(s.docs.map(d=>d.data())),e=>{if(err)err(e)});cb([]);return()=>{}}
-  return{init,mode:()=>mode,currentUser,currentFriend,sendMessage,onMessages,setStatus,onStatuses,setNextCall,onNextCall,heartbeat,onPresence,saveGameScore,onGameScores};
+  function saveGameScore(game,score){const u=currentUser(),f=currentFriend();if(mode!=="cloud'||!u||!f)return Promise.reject(new Error("Not connected."));return db.collection("game_scores").doc(`${game}_${f.name}`).set({game,name:f.name,uid:u.uid,score:Number(score)||0,ts:Date.now()},{merge:true})}
+  function getGameScores(){if(mode!=="cloud")return Promise.resolve([]);return db.collection("game_scores").get().then(s=>s.docs.map(d=>d.data()))}
+  function saveTTT(state){const u=currentUser(),f=currentFriend();if(mode!=="cloud"||!u||!f)return Promise.reject(new Error("Not connected."));return db.collection("games").doc("ttt").set({...state,updatedBy:f.name,ts:Date.now()},{merge:false})}
+  function getTTT(){if(mode!=="cloud")return Promise.resolve(null);return db.collection("games").doc("ttt").get().then(d=>d.exists?d.data():null)}
+  function watchTTT(cb){if(mode==="cloud")return db.collection("games").doc("ttt").onSnapshot(d=>cb(d.exists?d.data():null));cb(null);return()=>{}}
+  return{init,mode:()=>mode,currentUser,currentFriend,sendMessage,onMessages,setStatus,onStatuses,setNextCall,onNextCall,heartbeat,onPresence,saveGameScore,getGameScores,saveTTT,getTTT,watchTTT};
 })();
